@@ -414,29 +414,12 @@ impl Optimizer<'_> {
     /// }).x = 10;
     /// ```
     pub(super) fn invoke_iife(&mut self, e: &mut Expr) {
-        trace_op!("iife: invoke_iife");
-
-        if self.options.inline == 0 {
-            let skip = match e {
-                Expr::Call(v) => !v.callee.span().is_dummy(),
-                _ => true,
-            };
-
-            if skip {
-                log_abort!("skip");
-                return;
-            }
-        }
-
         let call = match e {
-            Expr::Call(v) => v,
+            Expr::Call(c) => c,
             _ => return,
         };
 
-        trace_op!("iife: Checking noinline");
-
-        if self.has_noinline(call.span) {
-            log_abort!("iife: Has no inline mark");
+        if self.can_invoke_iife(call) {
             return;
         }
 
@@ -444,13 +427,6 @@ impl Optimizer<'_> {
             Callee::Super(_) | Callee::Import(_) => return,
             Callee::Expr(e) => &mut **e,
         };
-
-        if self.ctx.dont_invoke_iife {
-            log_abort!("iife: Inline is prevented");
-            return;
-        }
-
-        trace_op!("iife: Checking callee");
 
         match callee {
             Expr::Arrow(f) => {
@@ -464,7 +440,7 @@ impl Optimizer<'_> {
                     return;
                 }
 
-                if self.ctx.in_top_level() && !self.ctx.in_call_arg && self.options.negate_iife {
+                if !self.may_add_ident() && !self.ctx.in_call_arg && self.options.negate_iife {
                     match &*f.body {
                         BlockStmtOrExpr::BlockStmt(body) => {
                             let has_decl =
@@ -583,7 +559,7 @@ impl Optimizer<'_> {
             Expr::Fn(f) => {
                 trace_op!("iife: Expr::Fn(..)");
 
-                if self.ctx.in_top_level() && !self.ctx.in_call_arg && self.options.negate_iife {
+                if !self.may_add_ident() && !self.ctx.in_call_arg && self.options.negate_iife {
                     let body = f.function.body.as_ref().unwrap();
                     let has_decl = body.stmts.iter().any(|stmt| matches!(stmt, Stmt::Decl(..)));
                     if has_decl {
@@ -671,6 +647,52 @@ impl Optimizer<'_> {
             }
             _ => {}
         }
+    }
+
+    pub(super) fn invoke_iife_into_block(
+        &mut self,
+        e: &mut CallExpr,
+        return_to: Option<Ident>,
+    ) -> Option<LabeledStmt> {
+        if self.can_invoke_iife(e) {
+            return None;
+        }
+
+        let callee = match &mut e.callee {
+            Callee::Super(_) | Callee::Import(_) => return None,
+            Callee::Expr(e) => &mut **e,
+        };
+
+        None
+    }
+
+    fn can_invoke_iife(&self, call: &CallExpr) -> bool {
+        trace_op!("iife: invoke_iife");
+
+        if self.options.inline == 0 {
+            let skip = !call.callee.span().is_dummy();
+
+            if skip {
+                log_abort!("skip");
+                return false;
+            }
+        }
+
+        trace_op!("iife: Checking noinline");
+
+        if self.has_noinline(call.span) {
+            log_abort!("iife: Has no inline mark");
+            return false;
+        }
+
+        if self.ctx.dont_invoke_iife {
+            log_abort!("iife: Inline is prevented");
+            return false;
+        }
+
+        trace_op!("iife: Checking callee");
+
+        true
     }
 
     fn is_return_arg_simple_enough_for_iife_eval(&self, e: &Expr) -> bool {
