@@ -420,11 +420,17 @@ impl Optimizer<'_> {
 
                     Expr::Lit(..) => {}
 
-                    Expr::Fn(_) | Expr::Arrow(..) if !usage.can_inline_fn_once() => {
-                        return;
-                    }
+                    Expr::Fn(_) | Expr::Arrow(..) => {
+                        let is_generator = match init {
+                            Expr::Arrow(ArrowExpr { is_generator, .. }) => *is_generator,
+                            Expr::Fn(FnExpr { function, .. }) => function.is_generator,
+                            _ => unreachable!(),
+                        };
 
-                    Expr::Fn(_) | Expr::Arrow(_) => {}
+                        if !usage.can_inline_fn_once(is_generator) {
+                            return;
+                        }
+                    }
 
                     Expr::Object(..) if self.options.pristine_globals => {
                         for id in idents_used_by_ignoring_nested(init) {
@@ -810,10 +816,14 @@ impl Optimizer<'_> {
             //
             if (self.options.reduce_vars || self.options.collapse_vars || self.options.inline != 0)
                 && usage.ref_count == 1
-                && usage.can_inline_fn_once()
                 && (match decl {
-                    Decl::Class(..) => !usage.flags.contains(VarUsageInfoFlags::USED_ABOVE_DECL),
-                    Decl::Fn(..) => true,
+                    Decl::Class(..) => {
+                        !usage.flags.contains(VarUsageInfoFlags::USED_ABOVE_DECL)
+                            && usage.can_inline_fn_once(false)
+                    }
+                    Decl::Fn(FnDecl { function, .. }) => {
+                        usage.can_inline_fn_once(function.is_generator)
+                    }
                     _ => false,
                 })
             {
