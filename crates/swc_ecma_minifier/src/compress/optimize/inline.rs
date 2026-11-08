@@ -11,9 +11,12 @@ use swc_ecma_visit::VisitMutWith;
 
 use super::Optimizer;
 use crate::{
-    compress::optimize::{
-        util::{is_valid_for_lhs, may_inline_arrow},
-        BitCtx,
+    compress::{
+        optimize::{
+            util::{is_valid_for_lhs, may_inline_arrow},
+            BitCtx,
+        },
+        util::is_pure_undefined,
     },
     program_data::{ScopeData, VarUsageInfo, VarUsageInfoFlags},
     usage_analyzer::{
@@ -62,9 +65,6 @@ impl Optimizer<'_> {
 
         if let Some(usage) = self.data.vars.get(&ident.to_id()) {
             let ref_count = usage.ref_count - u32::from(can_drop && usage.ref_count > 1);
-            if !usage.flags.contains(VarUsageInfoFlags::VAR_INITIALIZED) {
-                return;
-            }
 
             if let Some(scope) = self.data.get_scope(ident.ctxt) {
                 if scope.contains(ScopeData::USED_ARGUMENTS)
@@ -100,6 +100,8 @@ impl Optimizer<'_> {
                 log_abort!("inline: [x] It's cond init or used before decl",);
                 return;
             }
+
+            println!("{:#?}", ident);
 
             // No use => dropped
             if ref_count == 0 {
@@ -162,7 +164,7 @@ impl Optimizer<'_> {
             }
 
             if !usage.flags.contains(VarUsageInfoFlags::IS_FN_LOCAL) {
-                match init {
+                match &init {
                     Expr::Lit(..) | Expr::Ident(..) | Expr::Arrow(..) => {}
 
                     Expr::Unary(UnaryExpr {
@@ -180,9 +182,11 @@ impl Optimizer<'_> {
                             return;
                         }
                     }
-                    _ => {
-                        log_abort!("inline: [x] It's not fn-local");
-                        return;
+                    e => {
+                        if !is_pure_undefined(self.ctx.expr_ctx, e) {
+                            log_abort!("inline: [x] It's not fn-local");
+                            return;
+                        }
                     }
                 }
             }
@@ -211,11 +215,11 @@ impl Optimizer<'_> {
             // new variant is added for multi inline, think carefully
             if is_inline_enabled
                 && usage.declared_count == 1
-                && usage.assign_count == 1
+                && usage.assign_count <= 1
                 && !usage.flags.contains(VarUsageInfoFlags::REASSIGNED)
                 && (usage.property_mutation_count == 0
                     || !usage.flags.contains(VarUsageInfoFlags::REASSIGNED))
-                && match init {
+                && match &init {
                     Expr::Ident(Ident { sym, .. }) if &**sym == "eval" => false,
 
                     Expr::Ident(id) if !id.eq_ignore_span(ident) => {
@@ -271,8 +275,8 @@ impl Optimizer<'_> {
 
                     Expr::Lit(lit) => match lit {
                         Lit::Str(s) => {
-                            // If the string literal is declared without initializer and assigned
-                            // once, we can inline it.
+                            // If the string literal is declared without initializer and
+                            // assigned once, we can inline it.
                             if (ref_count == 1
                                 || (ref_count == 2
                                     && usage.assign_count == 1
@@ -305,7 +309,7 @@ impl Optimizer<'_> {
                             || ref_count > usage.callee_count
                             || !is_arrow_simple_enough_for_copy(arr).is_some_and(|cost| cost <= 8))
                     }
-                    _ => false,
+                    e => is_pure_undefined(self.ctx.expr_ctx, e),
                 }
             {
                 if !inlined_into_init {
