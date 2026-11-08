@@ -2774,42 +2774,22 @@ impl VisitMut for Optimizer<'_> {
             return;
         }
 
-        let Some((last, exprs)) = n.exprs.split_last_mut() else {
+        let Some((_, exprs)) = n.exprs.split_last_mut() else {
             return;
         };
 
-        // Do not expose an unresolved name as the direct operand of `typeof`.
-        // The local sequence cleanup cannot yet preserve that distinction.
-        if matches!(&**last, Expr::Ident(i) if i.ctxt == self.ctx.expr_ctx.unresolved_ctxt) {
-            return;
-        }
-
-        for expr in exprs {
-            let Expr::Call(CallExpr {
-                callee: Callee::Expr(callee),
-                args,
-                ..
-            }) = &**expr
-            else {
-                continue;
-            };
-
-            // Resolve known empty functions, but only for trivially effect-free
-            // arguments. Do not broaden recursive argument-effect extraction.
-            if !callee.is_ident()
-                || args.iter().any(|arg| {
-                    arg.spread.is_some()
-                        || !matches!(&*arg.expr, Expr::Fn(_) | Expr::Arrow(_) | Expr::Lit(_))
-                })
-            {
-                continue;
+        if !exprs.is_empty() {
+            for expr in exprs {
+                // Keep a placeholder for the pure pass to preserve indirect calls
+                // and other reference-sensitive sequence contexts during cleanup.
+                **expr = self.ignore_return_value(expr).unwrap_or_default();
             }
 
-            // Keep a placeholder for the pure pass to preserve indirect calls
-            // and other reference-sensitive sequence contexts during cleanup.
-            **expr = self
-                .ignore_return_value(expr)
-                .unwrap_or_else(|| make_number(DUMMY_SP, 0.0));
+            n.exprs.retain(|e| !e.is_invalid());
+
+            if n.exprs.len() == 1 {
+                n.exprs.insert(0, make_number(DUMMY_SP, 0.0).into());
+            }
         }
     }
 
