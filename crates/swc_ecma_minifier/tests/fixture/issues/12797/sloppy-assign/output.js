@@ -77,4 +77,10 @@ try {
 } catch (e) {
     console.log(e.name);
 }
-console.log("init I"), console.log(typeof missingA, typeof missingB, typeof missingC, typeof missingD, typeof missingE);
+class I {
+    static set(x) {
+        I.value = x;
+    }
+    static cache = console.log("init I");
+}
+console.log(typeof missingA, typeof missingB, typeof missingC, typeof missingD, typeof missingE);

@@ -638,12 +638,7 @@ impl Optimizer<'_> {
                     .data
                     .vars
                     .get(&ident.to_id())
-                    .map(|v| {
-                        v.usage_count == 0
-                            && !v
-                                .flags
-                                .contains(VarUsageInfoFlags::PROPERTY_MUTATED_OUTSIDE_SELF)
-                    })
+                    .map(|v| v.usage_count == 0 && v.property_mutation_count == 0)
                     .unwrap_or(false)
                 {
                     let Some(side_effects) =

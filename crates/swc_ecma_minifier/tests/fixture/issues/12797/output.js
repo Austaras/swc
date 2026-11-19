@@ -1,4 +1,35 @@
-foo(), bar(), baz(), qux();
+class C {
+    static set(x) {
+        C.value = x;
+    }
+    static cache = foo();
+}
+class D {
+    set(x) {
+        D.value = x;
+    }
+    static cache = bar();
+}
+class E {
+    static set(x) {
+        E.value = x;
+    }
+    static cache = new Map();
+}
+// A self mutation through a call or `new` argument in the class body does not
+// keep the class either.
+class J {
+    static set(x) {
+        Object.assign(J, x);
+    }
+    static cache = baz();
+}
+class K {
+    set(x) {
+        new Foo(K, x);
+    }
+    static cache = qux();
+}
 // The cases below must keep the class.
 class F {
     static set(x) {

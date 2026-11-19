@@ -1,5 +1,10 @@
 let count = 0;
-++count;
+class Unused {
+    static set(x) {
+        Unused.value = x;
+    }
+    static cache = ++count;
+}
 class Used {
     static set(x) {
         Used.value = x;

@@ -43,7 +43,7 @@ pub trait Storage: Sized {
     /// of `id` at the mutation position as a usage. This is the body of the
     /// class or function that `id` names, or the side-effect-free initializer
     /// of the variable `id`.
-    fn mark_property_mutation(&mut self, id: Id, is_self_mutation: bool);
+    fn mark_property_mutation(&mut self, id: Id);
 
     fn get_var_data(&self, id: Id) -> Option<&Self::VarData>;
 }

@@ -337,7 +337,6 @@ impl Optimizer<'_> {
                             u.flags |= flags & VarUsageInfoFlags::EXECUTED_MULTIPLE_TIME;
                             u.flags |= flags & VarUsageInfoFlags::USED_IN_COND;
                             u.flags |= flags & VarUsageInfoFlags::USED_RECURSIVELY;
-                            u.flags |= flags & VarUsageInfoFlags::PROPERTY_MUTATED_OUTSIDE_SELF;
 
                             if !flags.contains(VarUsageInfoFlags::NO_SIDE_EFFECT_FOR_MEMBER_ACCESS)
                             {
