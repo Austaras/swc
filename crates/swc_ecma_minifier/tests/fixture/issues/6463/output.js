@@ -1,4 +1,4 @@
-var foo_1 = function() {
+function foo() {
     console.log("foo");
-};
-foo_1(), foo_1();
+}
+foo(), foo();

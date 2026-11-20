@@ -26641,9 +26641,8 @@ function _get9(dt, pos) {
                         throw Error(getStringFromWasm0(arg0, arg1));
                     },
                     __wbindgen_closure_wrapper: function(arg0, arg1, arg2) {
-                        var f;
                         let state, real;
-                        return addHeapObject((f = __wbg_adapter_14, state = {
+                        return addHeapObject((state = {
                             a: arg0,
                             b: arg1,
                             cnt: 1,
@@ -26656,7 +26655,9 @@ function _get9(dt, pos) {
                             let a = state.a;
                             state.a = 0;
                             try {
-                                return f(a, state.b, ...args);
+                                return function(arg0, arg1, arg2) {
+                                    wasmInstance.modifiedExports._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__(arg0, arg1, addHeapObject(arg2));
+                                }(a, state.b, ...args);
                             } finally{
                                 0 == --state.cnt ? wasmInstance.exports.__wbindgen_export_2.get(state.dtor)(a, state.b) : state.a = a;
                             }
@@ -26732,9 +26733,6 @@ function _get9(dt, pos) {
                 function takeObject(idx) {
                     let ret = heap[idx];
                     return idx < 36 || (heap[idx] = heap_next, heap_next = idx), ret;
-                }
-                function __wbg_adapter_14(arg0, arg1, arg2) {
-                    wasmInstance.modifiedExports._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__(arg0, arg1, addHeapObject(arg2));
                 }
                 /**
      * @param {any} interaction

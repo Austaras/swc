@@ -224,17 +224,6 @@ impl Optimizer<'_> {
                             let mut should_inline =
                                 !u.may_change() && u.flags.contains(VarUsageInfoFlags::DECLARED);
 
-                            should_inline &=
-                                // Function declarations are hoisted
-                                //
-                                // As we copy expressions, this can cause a problem.
-                                // See https://github.com/swc-project/swc/issues/6463
-                                //
-                                // We check callee_count of `usage` because we copy simple functions
-                                !u.flags.contains(VarUsageInfoFlags::USED_ABOVE_DECL)
-                                    || !u.flags.contains(VarUsageInfoFlags::DECLARED_AS_FN_DECL)
-                                    || usage.callee_count == 0;
-
                             if u.flags.contains(VarUsageInfoFlags::DECLARED_AS_FOR_INIT)
                                 && !usage.flags.contains(VarUsageInfoFlags::IS_FN_LOCAL)
                             {
@@ -242,23 +231,6 @@ impl Optimizer<'_> {
                                     u.var_kind,
                                     Some(VarDeclKind::Let | VarDeclKind::Const)
                                 )
-                            }
-
-                            if u.flags.intersects(
-                                VarUsageInfoFlags::DECLARED_AS_FN_DECL
-                                    .union(VarUsageInfoFlags::DECLARED_AS_FN_EXPR),
-                            ) {
-                                if self.options.keep_fnames
-                                    || self.mangle_options.is_some_and(|v| v.keep_fn_names)
-                                {
-                                    should_inline = false
-                                }
-                            }
-
-                            if u.flags.contains(VarUsageInfoFlags::DECLARED_AS_FN_EXPR) {
-                                if self.options.inline != 3 {
-                                    return;
-                                }
                             }
 
                             should_inline
@@ -272,12 +244,7 @@ impl Optimizer<'_> {
                             // If the string literal is declared without
                             // initializer and assigned
                             // once, we can inline it.
-                            if (ref_count == 1
-                                || (ref_count == 2
-                                    && usage.assign_count == 1
-                                    && usage.flags.intersects(VarUsageInfoFlags::LAZY_INIT)))
-                                || s.value.len() <= 3
-                            {
+                            if ref_count == 1 || s.value.len() <= 3 {
                                 true
                             } else {
                                 self.vars
@@ -335,7 +302,6 @@ impl Optimizer<'_> {
                             u.flags |= flags & VarUsageInfoFlags::HAS_PROPERTY_ACCESS;
                             u.flags |= flags & VarUsageInfoFlags::USED_ABOVE_DECL;
                             u.flags |= flags & VarUsageInfoFlags::EXECUTED_MULTIPLE_TIME;
-                            u.flags |= flags & VarUsageInfoFlags::USED_IN_COND;
                             u.flags |= flags & VarUsageInfoFlags::USED_RECURSIVELY;
                             u.flags |= flags & VarUsageInfoFlags::PROPERTY_MUTATED_OUTSIDE_SELF;
 
@@ -462,28 +428,6 @@ impl Optimizer<'_> {
                             {
                                 return;
                             }
-
-                            if init_usage
-                                .flags
-                                .contains(VarUsageInfoFlags::DECLARED_AS_FN_DECL)
-                                || init_usage
-                                    .flags
-                                    .contains(VarUsageInfoFlags::DECLARED_AS_FN_EXPR)
-                            {
-                                if self.options.keep_fnames
-                                    || self.mangle_options.is_some_and(|v| v.keep_fn_names)
-                                {
-                                    return;
-                                }
-                            }
-                            if init_usage
-                                .flags
-                                .contains(VarUsageInfoFlags::DECLARED_AS_FN_EXPR)
-                            {
-                                if self.options.inline != 3 {
-                                    return;
-                                }
-                            }
                         }
                     }
 
@@ -587,7 +531,6 @@ impl Optimizer<'_> {
                     // Reading a `let` binding above its declaration throws.
                     .union(VarUsageInfoFlags::USED_ABOVE_DECL)
                     .union(VarUsageInfoFlags::DECLARED_AS_FN_PARAM)
-                    .union(VarUsageInfoFlags::DECLARED_AS_FN_DECL)
                     .union(VarUsageInfoFlags::DECLARED_AS_FN_EXPR)
                     .union(VarUsageInfoFlags::DECLARED_AS_CATCH_PARAM)
                     .union(VarUsageInfoFlags::DECLARED_AS_FOR_INIT),

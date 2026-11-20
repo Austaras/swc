@@ -55,7 +55,6 @@ bitflags::bitflags! {
         const DECLARED                  = 1 << 1;
         /// `true` if the enclosing function defines this variable as a parameter.
         const DECLARED_AS_FN_PARAM      = 1 << 2;
-        const DECLARED_AS_FN_DECL       = 1 << 3;
         const DECLARED_AS_FN_EXPR       = 1 << 4;
         const DECLARED_AS_FOR_INIT      = 1 << 5;
         /// The variable itself is reassigned in the current module.
@@ -72,7 +71,6 @@ bitflags::bitflags! {
         /// `true` if all its assign happens in the same function scope it's defined
         const ASSIGNED_FN_LOCAL         = 1 << 12;
         const EXECUTED_MULTIPLE_TIME    = 1 << 13;
-        const USED_IN_COND              = 1 << 14;
         const VAR_INITIALIZED           = 1 << 15;
         const DECLARED_AS_CATCH_PARAM   = 1 << 16;
         const NO_SIDE_EFFECT_FOR_MEMBER_ACCESS = 1 << 17;
@@ -81,15 +79,10 @@ bitflags::bitflags! {
         const USED_AS_ARG               = 1 << 19;
         const INDEXED_WITH_DYNAMIC_KEY  = 1 << 20;
         const PURE_FN                   = 1 << 21;
-        /// Is the variable declared in top level?
-        const IS_TOP_LEVEL              = 1 << 22;
         const USED_RECURSIVELY          = 1 << 23;
 
         /// `a` in `foo(<a />)`
         const USED_AS_JSX_CALLEE       = 1 << 24;
-
-        /// The variable is declared without initializer.
-        const LAZY_INIT                 = 1 << 25;
 
         /// The binding's value may be changed by another module.
         const EXTERNALLY_MUTABLE        = 1 << 26;
@@ -332,12 +325,10 @@ impl Storage for ProgramData {
                     *e_flags |= var_info_flags & VarUsageInfoFlags::EXPORTED;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::DECLARED;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::DECLARED_AS_FN_PARAM;
-                    *e_flags |= var_info_flags & VarUsageInfoFlags::DECLARED_AS_FN_DECL;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::DECLARED_AS_FN_EXPR;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::DECLARED_AS_CATCH_PARAM;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::DECLARED_AS_FOR_INIT;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::EXECUTED_MULTIPLE_TIME;
-                    *e_flags |= var_info_flags & VarUsageInfoFlags::USED_IN_COND;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::USED_AS_ARG;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::USED_AS_REF;
                     *e_flags |= var_info_flags & VarUsageInfoFlags::INDEXED_WITH_DYNAMIC_KEY;
@@ -421,9 +412,6 @@ impl Storage for ProgramData {
         if ctx.executed_multiple_time() {
             e.flags.insert(VarUsageInfoFlags::EXECUTED_MULTIPLE_TIME);
         }
-        if ctx.in_cond() {
-            e.flags.insert(VarUsageInfoFlags::USED_IN_COND);
-        }
     }
 
     fn report_assign(&mut self, ctx: Ctx, i: Id, is_op: bool, ty: Value<Type>) {
@@ -474,9 +462,6 @@ impl Storage for ProgramData {
                         .flags
                         .insert(VarUsageInfoFlags::EXECUTED_MULTIPLE_TIME);
                 }
-                if ctx.in_cond() {
-                    usage.flags.insert(VarUsageInfoFlags::USED_IN_COND);
-                }
 
                 if is_op {
                     usage.usage_count += 1;
@@ -501,9 +486,6 @@ impl Storage for ProgramData {
         // }
 
         let v = self.vars.entry(i.to_id()).or_default();
-        if ctx.is_top_level() {
-            v.flags |= VarUsageInfoFlags::IS_TOP_LEVEL;
-        }
 
         if init_type.is_some() ||
         // it may actually not be assigned if loop is empty
@@ -672,13 +654,9 @@ impl VarDataLike for VarUsageInfo {
         self.flags.insert(VarUsageInfoFlags::DECLARED_AS_FN_PARAM);
     }
 
-    fn mark_as_lazy_init(&mut self) {
-        self.flags.insert(VarUsageInfoFlags::LAZY_INIT);
-    }
+    fn mark_as_lazy_init(&mut self) {}
 
-    fn mark_declared_as_fn_decl(&mut self) {
-        self.flags.insert(VarUsageInfoFlags::DECLARED_AS_FN_DECL);
-    }
+    fn mark_declared_as_fn_decl(&mut self) {}
 
     fn mark_declared_as_fn_expr(&mut self) {
         self.flags.insert(VarUsageInfoFlags::DECLARED_AS_FN_EXPR);

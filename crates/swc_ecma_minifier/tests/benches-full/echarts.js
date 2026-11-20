@@ -7263,14 +7263,6 @@
             path.applyTransform(m);
         }
     }
-    /**
-     * Sub pixel optimize for canvas
-     *
-     * @param position Coordinate, such as x, y
-     * @param lineWidth Should be nonnegative integer.
-     * @param positiveOrNegative Default false (negative).
-     * @return Optimized position.
-     */ var subPixelOptimize$1 = subPixelOptimize;
     function animateOrSetProps(animationType, el, props, animatableModel, dataIndex, cb, during) {
         var removeOpt, animationPayload, isFrom = !1;
         'function' == typeof dataIndex ? (during = cb, cb = dataIndex, dataIndex = null) : isObject(dataIndex) && (cb = dataIndex.cb, during = dataIndex.during, isFrom = dataIndex.isFrom, removeOpt = dataIndex.removeOpt, dataIndex = dataIndex.dataIndex);
@@ -7543,7 +7535,7 @@
      */ function(param) {
             return subPixelOptimizeRect(param.shape, param.shape, param.style), param;
         },
-        subPixelOptimize: subPixelOptimize$1,
+        subPixelOptimize: subPixelOptimize,
         updateProps: updateProps,
         initProps: initProps,
         removeElement: removeElement,
@@ -9994,7 +9986,7 @@
                 return clone(-1 === index ? mediaDefault.option : mediaList[index].option);
             })), this._currentMediaIndices = indices, result;
         }, OptionManager;
-    }(), isObject$1 = isObject, POSSIBLE_STYLES = [
+    }(), POSSIBLE_STYLES = [
         'areaStyle',
         'lineStyle',
         'nodeStyle',
@@ -10022,7 +10014,7 @@
     }
     function compatTextStyle(opt, propName) {
         // Check whether is not object (string\null\undefined ...)
-        var labelOptSingle = isObject$1(opt) && opt[propName], textStyle = isObject$1(labelOptSingle) && labelOptSingle.textStyle;
+        var labelOptSingle = isObject(opt) && opt[propName], textStyle = isObject(labelOptSingle) && labelOptSingle.textStyle;
         if (textStyle) {
             // eslint-disable-next-line max-len
             deprecateLog("textStyle hierarchy in " + propName + " has been removed since 4.0. All textStyle properties are configured in " + propName + " directly now.");
@@ -10105,8 +10097,8 @@
     function globalBackwardCompat(option, isTheme) {
         var axes;
         each(toArr(option.series), function(seriesOpt) {
-            isObject$1(seriesOpt) && function(seriesOpt) {
-                if (isObject$1(seriesOpt)) {
+            isObject(seriesOpt) && function(seriesOpt) {
+                if (isObject(seriesOpt)) {
                     compatEC2ItemStyle(seriesOpt), removeEC3NormalStatus(seriesOpt), compatTextStyle(seriesOpt, 'label'), compatTextStyle(seriesOpt, 'upperLabel'), compatTextStyle(seriesOpt, 'edgeLabel'), seriesOpt.emphasis && (compatTextStyle(seriesOpt.emphasis, 'label'), compatTextStyle(seriesOpt.emphasis, 'upperLabel'), compatTextStyle(seriesOpt.emphasis, 'edgeLabel'));
                     var markPoint = seriesOpt.markPoint;
                     markPoint && (compatEC2ItemStyle(markPoint), compatEC3CommonStyles(markPoint));
@@ -10155,7 +10147,7 @@
         }), each(toArr(option.radar), function(radarOpt) {
             compatTextStyle(radarOpt, 'name'), radarOpt.name && null == radarOpt.axisName && (radarOpt.axisName = radarOpt.name, delete radarOpt.name, deprecateLog('name property in radar component has been changed to axisName')), null != radarOpt.nameGap && null == radarOpt.axisNameGap && (radarOpt.axisNameGap = radarOpt.nameGap, delete radarOpt.nameGap, deprecateLog('nameGap property in radar component has been changed to axisNameGap'));
         }), each(toArr(option.geo), function(geoOpt) {
-            isObject$1(geoOpt) && (compatEC3CommonStyles(geoOpt), each(toArr(geoOpt.regions), function(regionObj) {
+            isObject(geoOpt) && (compatEC3CommonStyles(geoOpt), each(toArr(geoOpt.regions), function(regionObj) {
                 compatEC3CommonStyles(regionObj);
             }));
         }), each(toArr(option.timeline), function(timelineOpt) {
@@ -14985,7 +14977,7 @@
     }, geoSourceManager_load = function(mapName, nameMap, nameProperty) {
         var resource = storage.get(mapName);
         return resource ? resource.load(nameMap, nameProperty) : void console.error('Map ' + mapName + ' not exists. The GeoJSON of the map must be provided.');
-    }, isObject$2 = isObject, hasWindow = "u" > typeof window, PRIORITY = {
+    }, hasWindow = "u" > typeof window, PRIORITY = {
         PROCESSOR: {
             FILTER: 1000,
             SERIES_FILTER: 800,
@@ -15092,7 +15084,7 @@
             return this._zr;
         }, /* eslint-disable-next-line */ ECharts.prototype.setOption = function(option, notMerge, lazyUpdate) {
             if (assert(!this[IN_MAIN_PROCESS_KEY], '`setOption` should not be called during main process.'), this._disposed) return void disposedWarning(this.id);
-            if (isObject$2(notMerge) && (lazyUpdate = notMerge.lazyUpdate, silent = notMerge.silent, replaceMerge = notMerge.replaceMerge, transitionOpt = notMerge.transition, notMerge = notMerge.notMerge), this[IN_MAIN_PROCESS_KEY] = !0, !this._model || notMerge) {
+            if (isObject(notMerge) && (lazyUpdate = notMerge.lazyUpdate, silent = notMerge.silent, replaceMerge = notMerge.replaceMerge, transitionOpt = notMerge.transition, notMerge = notMerge.notMerge), this[IN_MAIN_PROCESS_KEY] = !0, !this._model || notMerge) {
                 var silent, replaceMerge, transitionOpt, optionManager = new OptionManager(this._api), theme = this._theme, ecModel = this._model = new GlobalModel();
                 ecModel.scheduler = this._scheduler, ecModel.init(null, null, null, theme, this._locale, optionManager);
             }
@@ -15330,7 +15322,7 @@
             }
         }, ECharts.prototype.showLoading = function(name, cfg) {
             if (this._disposed) return void disposedWarning(this.id);
-            if (isObject$2(name) && (cfg = name, name = ''), name = name || 'default', this.hideLoading(), !loadingEffects[name]) return void console.warn('Loading effects ' + name + ' not exists.');
+            if (isObject(name) && (cfg = name, name = ''), name = name || 'default', this.hideLoading(), !loadingEffects[name]) return void console.warn('Loading effects ' + name + ' not exists.');
             var el = loadingEffects[name](this._api, cfg), zr = this._zr;
             this._loadingFX = el, zr.add(el);
         }, /**
@@ -15350,7 +15342,7 @@
              *        undefined: Auto decide whether perform flush.
              */ ECharts.prototype.dispatchAction = function(payload, opt) {
             if (this._disposed) return void disposedWarning(this.id);
-            if (isObject$2(opt) || (opt = {
+            if (isObject(opt) || (opt = {
                 silent: !!opt
             }), actions[payload.type] && this._model) {
                 if (this[IN_MAIN_PROCESS_KEY]) return void this._pendingActions.push(payload);
@@ -15932,7 +15924,7 @@
     }
     function registerAction(actionInfo, eventName, action) {
         'function' == typeof eventName && (action = eventName, eventName = '');
-        var actionType = isObject$2(actionInfo) ? actionInfo.type : [
+        var actionType = isObject(actionInfo) ? actionInfo.type : [
             actionInfo,
             actionInfo = {
                 event: eventName
@@ -15954,7 +15946,7 @@
     }
     var registeredTasks = [];
     function normalizeRegister(targetList, priority, fn, defaultPriority, visualType) {
-        if ((isFunction(priority) || isObject$2(priority)) && (fn = priority, priority = defaultPriority), isNaN(priority) || null == priority) throw Error('Illegal priority');
+        if ((isFunction(priority) || isObject(priority)) && (fn = priority, priority = defaultPriority), isNaN(priority) || null == priority) throw Error('Illegal priority');
          // Check duplicate
         if (each(targetList, function(wrap) {
             assert(wrap.__raw !== fn);
@@ -16523,7 +16515,7 @@
                  *
                  * This prop should never be `null`/`undefined` after initialized.
                  */ this.otherDims = {}, null != opt && extend(this, opt);
-    }, mathFloor = Math.floor, isObject$3 = isObject, UNDEFINED = 'undefined', dataCtors = {
+    }, mathFloor = Math.floor, UNDEFINED = 'undefined', dataCtors = {
         float: typeof Float64Array === UNDEFINED ? Array : Float64Array,
         int: typeof Int32Array === UNDEFINED ? Array : Int32Array,
         // Ordinal data type can be string or int
@@ -16841,7 +16833,7 @@
         }, List.prototype.getCalculationInfo = function(key) {
             return this._calculationInfo[key];
         }, List.prototype.setCalculationInfo = function(key, value) {
-            isObject$3(key) ? extend(this._calculationInfo, key) : this._calculationInfo[key] = value;
+            isObject(key) ? extend(this._calculationInfo, key) : this._calculationInfo[key] = value;
         }, /**
              * Get sum of data in one dimension
              */ List.prototype.getSum = function(dim) {
@@ -17140,7 +17132,7 @@
             var visual = this._visual;
             return visual && visual[key];
         }, List.prototype.setVisual = function(kvObj, val) {
-            this._visual = this._visual || {}, isObject$3(kvObj) ? extend(this._visual, kvObj) : this._visual[kvObj] = val;
+            this._visual = this._visual || {}, isObject(kvObj) ? extend(this._visual, kvObj) : this._visual[kvObj] = val;
         }, /**
              * Get visual property of single data item
              */ // eslint-disable-next-line
@@ -17158,16 +17150,16 @@
             var itemVisuals = this._itemVisuals, itemVisual = itemVisuals[idx];
             itemVisual || (itemVisual = itemVisuals[idx] = {});
             var val = itemVisual[key];
-            return null == val && (isArray(val = this.getVisual(key)) ? val = val.slice() : isObject$3(val) && (val = extend({}, val)), itemVisual[key] = val), val;
+            return null == val && (isArray(val = this.getVisual(key)) ? val = val.slice() : isObject(val) && (val = extend({}, val)), itemVisual[key] = val), val;
         }, List.prototype.setItemVisual = function(idx, key, value) {
             var itemVisual = this._itemVisuals[idx] || {};
-            this._itemVisuals[idx] = itemVisual, isObject$3(key) ? extend(itemVisual, key) : itemVisual[key] = value;
+            this._itemVisuals[idx] = itemVisual, isObject(key) ? extend(itemVisual, key) : itemVisual[key] = value;
         }, /**
              * Clear itemVisuals and list visual.
              */ List.prototype.clearAllVisual = function() {
             this._visual = {}, this._itemVisuals = [];
         }, List.prototype.setLayout = function(key, val) {
-            if (isObject$3(key)) {
+            if (isObject(key)) {
                 for(var name_1 in key)key.hasOwnProperty(name_1) && this.setLayout(name_1, key[name_1]);
                 return;
             }
@@ -33243,10 +33235,10 @@
                     }
                     function addBodyEnd(ends, point, start) {
                         var point1 = point.slice(), point2 = point.slice();
-                        point1[0] = subPixelOptimize$1(point1[0] + candleWidth / 2, 1, !1), point2[0] = subPixelOptimize$1(point2[0] - candleWidth / 2, 1, !0), start ? ends.push(point1, point2) : ends.push(point2, point1);
+                        point1[0] = subPixelOptimize(point1[0] + candleWidth / 2, 1, !1), point2[0] = subPixelOptimize(point2[0] - candleWidth / 2, 1, !0), start ? ends.push(point1, point2) : ends.push(point2, point1);
                     }
                     function subPixelOptimizePoint(point) {
-                        return point[0] = subPixelOptimize$1(point[0], 1), point;
+                        return point[0] = subPixelOptimize(point[0], 1), point;
                     }
                 }
             };
